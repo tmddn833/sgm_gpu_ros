@@ -97,6 +97,9 @@ public:
     const sensor_msgs::CameraInfo& right_camera_info,
     stereo_msgs::DisparityImage& disparity_msg
   );
+  bool computeDisparity(const cv::Mat &left_image,
+                        const cv::Mat &right_image,
+                        cv::Mat *disparity_out);
 };
 
 } // namespace sgm_gpu

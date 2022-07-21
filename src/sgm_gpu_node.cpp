@@ -15,53 +15,88 @@
 ***********************************************************************/
 
 #include "sgm_gpu_node.h"
+#include <message_filters/synchronizer.h>
 
-namespace sgm_gpu
-{
+namespace sgm_gpu {
 
-SgmGpuNode::SgmGpuNode()
-{
-  node_handle_.reset(new ros::NodeHandle());
-  private_node_handle_.reset(new ros::NodeHandle("~"));
+    SgmGpuNode::SgmGpuNode() {
+        node_handle_.reset(new ros::NodeHandle());
+        private_node_handle_.reset(new ros::NodeHandle("~"));
+        private_node_handle_->getParam("rgb_fov", rgb_fov_deg_);
+        private_node_handle_->getParam("base_line",stereo_baseline_);
 
-  image_transport_.reset(new image_transport::ImageTransport(*node_handle_));
+        image_transport_.reset(new image_transport::ImageTransport(*node_handle_));
+        sgm_.reset(new SgmGpu(*private_node_handle_));
 
-  sgm_.reset(new SgmGpu(*private_node_handle_));
+        disparity_pub_ = private_node_handle_->advertise<sensor_msgs::Image>("disparity", 1);
 
-  disparity_pub_ = private_node_handle_->advertise<stereo_msgs::DisparityImage>("disparity", 1);
+        // Subscribe left and right Image topic
+        std::string left_base_topic = node_handle_->resolveName("left_image");
+        std::string right_base_topic = node_handle_->resolveName("right_image");
+        left_image_sub_.subscribe(*image_transport_, left_base_topic, 10);
+        right_image_sub_.subscribe(*image_transport_, right_base_topic, 10);
 
-  // Subscribe left and right Image topic
-  std::string left_base_topic = node_handle_->resolveName("left_image");
-  std::string right_base_topic = node_handle_->resolveName("right_image");
-  left_image_sub_.subscribe(*image_transport_, left_base_topic, 10);
-  right_image_sub_.subscribe(*image_transport_, right_base_topic, 10);
+        stereo_synchronizer_.reset(
+                new StereoSynchronizer(StereoSynchronize_policies(10), left_image_sub_, right_image_sub_)
+        );
+        ROS_INFO("sgm started");
+        stereo_synchronizer_->registerCallback(&SgmGpuNode::stereoCallback, this);
+    }
 
-  // Find CameraInfo topic from corresponded Image topic and subscribe it
-  std::string left_info_topic = image_transport::getCameraInfoTopic(left_base_topic);
-  std::string right_info_topic = image_transport::getCameraInfoTopic(right_base_topic);
-  left_info_sub_.subscribe(*node_handle_, left_info_topic, 10);
-  right_info_sub_.subscribe(*node_handle_, right_info_topic, 10);
+    void SgmGpuNode::stereoCallback(
+            const sensor_msgs::ImageConstPtr &left_image,
+            const sensor_msgs::ImageConstPtr &right_image
+    ) {
+        if (disparity_pub_.getNumSubscribers() == 0) {
+            ROS_INFO("getNumSubscribers");
+            return;
+        }
+        cv_bridge::CvImageConstPtr left_cv_ptr;
+        cv_bridge::CvImageConstPtr right_cv_ptr;
+        try
+        {
+            left_cv_ptr = cv_bridge::toCvShare(left_image, sensor_msgs::image_encodings::RGB8);
+            right_cv_ptr = cv_bridge::toCvShare(right_image, sensor_msgs::image_encodings::RGB8);
+        }
+        catch (cv_bridge::Exception& e)
+        {
+            ROS_ERROR("cv_bridge exception: %s", e.what());
+            return;
+        }
+        int img_rows_ = left_image->height;
+        int img_cols_ = left_image->width;
 
-  stereo_synchronizer_.reset(
-    new StereoSynchronizer(left_image_sub_, right_image_sub_, left_info_sub_, right_info_sub_, 10)
-  );
-  stereo_synchronizer_->registerCallback(&SgmGpuNode::stereoCallback, this);
-}
+        // compute disparity image
+        cv::Mat depth_uint16(img_rows_, img_cols_, CV_16UC1);
+        cv::Mat disparity(img_rows_, img_cols_, CV_8UC1);
+        sgm_->computeDisparity(left_cv_ptr->image, right_cv_ptr->image, &disparity);
+        disparity.convertTo(disparity, CV_32FC1);
 
-void SgmGpuNode::stereoCallback(
-  const sensor_msgs::ImageConstPtr &left_image,
-  const sensor_msgs::ImageConstPtr &right_image,
-  const sensor_msgs::CameraInfoConstPtr &left_info,
-  const sensor_msgs::CameraInfoConstPtr &right_info
-)
-{
-  if (disparity_pub_.getNumSubscribers() == 0)
-    return;
 
-  stereo_msgs::DisparityImage disparity;
-  sgm_->computeDisparity(*left_image, *right_image, *left_info, *right_info, disparity);
+        float f = (img_cols_ / 2.0) / std::tan((M_PI * (rgb_fov_deg_ / 180.0)) / 2.0);
+        //  depth = static_cast<float>(stereo_baseline_) * f / disparity;
+        for (int r = 0; r < img_rows_; ++r) {
+            for (int c = 0; c < img_cols_; ++c) {
+                if (disparity.at<float>(r, c) == 0.0f) {
+//                    depth_float.at<float>(r, c) = 0.0f;
+                    depth_uint16.at<unsigned short>(r, c) = 0;
+                } else if (disparity.at<float>(r, c) == 255.0f) {
+//                    depth_float.at<float>(r, c) = 0.0f;
+                    depth_uint16.at<unsigned short>(r, c) = 0;
+                } else {
+//                    depth_float.at<float>(r, c) = static_cast<float>(stereo_baseline_) * f /
+//                                                  disparity.at<float>(r, c);
+                    depth_uint16.at<unsigned short>(r, c) = static_cast<unsigned short>(
+                            1000.0 * static_cast<float>(stereo_baseline_) * f /
+                            disparity.at<float>(r, c));
+                }
+            }
+        }
 
-  disparity_pub_.publish(disparity);
-}
+        sensor_msgs::ImagePtr sgm_depth_msg =
+                cv_bridge::CvImage(std_msgs::Header(), "mono16", depth_uint16).toImageMsg();
+        sgm_depth_msg->header = left_image->header;
+        disparity_pub_.publish(sgm_depth_msg);
+    }
 
 } // namespace sgm_gpu

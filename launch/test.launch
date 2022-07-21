@@ -3,17 +3,21 @@
 <launch>
   <node name="bag_player" pkg="rosbag" type="play" args="--loop $(find sgm_gpu)/test_input.bag"/>
 
-  <node name="sgm_gpu_node" pkg="sgm_gpu" type="sgm_gpu_node">
+  <node name="sgm_gpu_node" pkg="sgm_gpu" type="sgm_gpu_node" output="screen">
     <param name="image_transport" value="compressed"/>
     <remap from="left_image" to="stereo_robot/mobile_base/camera/left/image_raw"/>
     <remap from="right_image" to="stereo_robot/mobile_base/camera/right/image_raw"/>
+    <remap from="left_image_info" to="stereo_robot/mobile_base/camera/left/camera_info"/>
+    <remap from="right_image_info" to="stereo_robot/mobile_base/camera/right/camera_info"/>
+    <param name="rgb_fov" value="90"/>
+    <param name="base_line" value="0.1"/>
   </node>
 
   <node name="input_viewer" pkg="image_view" type="image_view">
     <param name="image_transport" value="compressed"/>
     <remap from="image" to="stereo_robot/mobile_base/camera/left/image_raw"/>
   </node>
-  <node name="disparity_viewer" pkg="image_view" type="disparity_view">
+  <node name="disparity_viewer" pkg="image_view" type="image_view">
     <remap from="image" to="sgm_gpu_node/disparity"/>
   </node>
 </launch>

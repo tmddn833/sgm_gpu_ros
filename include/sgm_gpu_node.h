@@ -23,44 +23,50 @@
 #include <image_transport/subscriber_filter.h>
 #include <message_filters/subscriber.h>
 #include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <cv_bridge/cv_bridge.h>
 
-namespace sgm_gpu
-{
 
-class SgmGpuNode
-{
-private:
-  std::shared_ptr<ros::NodeHandle> node_handle_;
-  std::shared_ptr<ros::NodeHandle> private_node_handle_;
+namespace sgm_gpu {
 
-  std::shared_ptr<image_transport::ImageTransport> image_transport_;
+    class SgmGpuNode {
+    private:
+        std::shared_ptr<ros::NodeHandle> node_handle_;
+        std::shared_ptr<ros::NodeHandle> private_node_handle_;
 
-  std::shared_ptr<SgmGpu> sgm_;
+        std::shared_ptr<image_transport::ImageTransport> image_transport_;
 
-  image_transport::SubscriberFilter left_image_sub_;
-  image_transport::SubscriberFilter right_image_sub_;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> left_info_sub_;
-  message_filters::Subscriber<sensor_msgs::CameraInfo> right_info_sub_;
+        std::shared_ptr<SgmGpu> sgm_;
 
-  using StereoSynchronizer = message_filters::TimeSynchronizer
-  <
-    sensor_msgs::Image, sensor_msgs::Image, 
-    sensor_msgs::CameraInfo, sensor_msgs::CameraInfo
-  >;
-  std::shared_ptr<StereoSynchronizer> stereo_synchronizer_;
+        image_transport::SubscriberFilter left_image_sub_;
+        image_transport::SubscriberFilter right_image_sub_;
+        message_filters::Subscriber<sensor_msgs::CameraInfo> left_info_sub_;
+        message_filters::Subscriber<sensor_msgs::CameraInfo> right_info_sub_;
 
-  ros::Publisher disparity_pub_;
-  
-  void stereoCallback(
-    const sensor_msgs::ImageConstPtr &left_image_msg, 
-    const sensor_msgs::ImageConstPtr &right_image_msg, 
-    const sensor_msgs::CameraInfoConstPtr &left_info_msg, 
-    const sensor_msgs::CameraInfoConstPtr &right_info_msg
-  );
+//  typedef message_filters::sync_policies::ApproximateTime
+//  <
+//    sensor_msgs::Image, sensor_msgs::Image,
+//    sensor_msgs::CameraInfo, sensor_msgs::CameraInfo
+//  > StereoSynchronize_policies;
+        typedef message_filters::sync_policies::ApproximateTime
+                <sensor_msgs::Image, sensor_msgs::Image> StereoSynchronize_policies;
+        using StereoSynchronizer = message_filters::Synchronizer<StereoSynchronize_policies>;
+        std::shared_ptr<StereoSynchronizer> stereo_synchronizer_;
+        ros::Publisher disparity_pub_;
 
-public:
-  SgmGpuNode();
-};
+        typedef boost::shared_ptr<cv_bridge::CvImage> CvImagePtr;
+        typedef boost::shared_ptr<cv_bridge::CvImage const> CvImageConstPtr;
+
+        void stereoCallback(
+                const sensor_msgs::ImageConstPtr &left_image_msg,
+                const sensor_msgs::ImageConstPtr &right_image_msg
+        );
+
+    public:
+        SgmGpuNode();
+        float rgb_fov_deg_;
+        float stereo_baseline_;
+    };
 
 } // namespace sgm_gpu
 
