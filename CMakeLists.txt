@@ -1,6 +1,6 @@
 # CMake>=3.8 supports CUDA C++ as intrinsically supported language
 cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
-project(sgm_gpu CUDA CXX)
+project(sgm_gpu_ros CUDA CXX)
 
 find_package(catkin REQUIRED COMPONENTS
   cv_bridge
@@ -12,6 +12,8 @@ find_package(catkin REQUIRED COMPONENTS
   stereo_msgs
 )
 find_package(OpenCV REQUIRED)
+
+set(PROJECT_NAME_ "sgm_gpu")
 
 set(CUDA_NVCC_FLAGS
   ${CUDA_NVCC_FLAGS};
@@ -50,15 +52,15 @@ target_link_libraries(${PROJECT_NAME}
 )
 
 # Build ${PROJECT_NAME}_node
-add_executable(${PROJECT_NAME}_node 
-  src/${PROJECT_NAME}_node.cpp
-  src/${PROJECT_NAME}_node_main.cpp
+add_executable(${PROJECT_NAME}_node
+  src/${PROJECT_NAME_}_node.cpp
+  src/${PROJECT_NAME_}_node_main.cpp
 )
 add_dependencies(${PROJECT_NAME}_node
   ${PROJECT_NAME}
   ${catkin_EXPORTED_TARGETS}
 )
-target_link_libraries(${PROJECT_NAME}_node 
+target_link_libraries(${PROJECT_NAME}_node
   ${PROJECT_NAME}
   ${catkin_LIBRARIES}
 )
@@ -69,7 +71,7 @@ install(TARGETS ${PROJECT_NAME}
  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
  RUNTIME DESTINATION ${CATKIN_GLOBAL_BIN_DESTINATION}
 )
-install(DIRECTORY include/${PROJECT_NAME}/
+install(DIRECTORY include/${PROJECT_NAME_}/
   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
 

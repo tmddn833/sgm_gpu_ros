@@ -43,7 +43,10 @@ namespace sgm_gpu {
         message_filters::Subscriber<sensor_msgs::CameraInfo> left_info_sub_;
         message_filters::Subscriber<sensor_msgs::CameraInfo> right_info_sub_;
 
-//  typedef message_filters::sync_policies::ApproximateTime
+        image_transport::Subscriber gt_depth_sub_;
+
+
+        //  typedef message_filters::sync_policies::ApproximateTime
 //  <
 //    sensor_msgs::Image, sensor_msgs::Image,
 //    sensor_msgs::CameraInfo, sensor_msgs::CameraInfo
@@ -61,11 +64,15 @@ namespace sgm_gpu {
                 const sensor_msgs::ImageConstPtr &left_image_msg,
                 const sensor_msgs::ImageConstPtr &right_image_msg
         );
+        void gtDepthCallback(
+                const sensor_msgs::ImageConstPtr &
+        );
 
     public:
         SgmGpuNode();
         float rgb_fov_deg_;
         float stereo_baseline_;
+        bool use_gt_;
     };
 
 } // namespace sgm_gpu

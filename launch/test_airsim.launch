@@ -2,14 +2,14 @@
 
 <launch>
   
-  <node name="sgm_gpu_node" pkg="sgm_gpu" type="sgm_gpu_node" output="screen">
+  <node name="sgm_gpu_node" pkg="sgm_gpu_ros" type="sgm_gpu_ros_node" output="screen">
     <param name="image_transport" value="compressed"/>
     <remap from="left_image" to="/airsim_node/PX4/left/Scene"/>
     <remap from="right_image" to="/airsim_node/PX4/right/Scene"/>
     <remap from="left_image_info" to="/airsim_node/PX4/left/Scene/camera_info"/>
     <remap from="right_image_info" to="/airsim_node/PX4/right/Scene/camera_info"/>
     <param name="rgb_fov" value="90"/>
-    <param name="base_line" value="0.1"/>
+    <param name="base_line" value="0.2"/>
   </node>
 
   <node name="input_right_viewer" pkg="image_view" type="image_view">
