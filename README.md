@@ -93,3 +93,11 @@ A node calculates disparity from stereo image topic.
 
 - Disparity range is `[0, 127]`
 
+## Using package with airsim
+  While running unreal engine, you can make sgm depth map with stereo camera by setting `~/Document/Airsim/settings.json` with given settings.json file
+  
+  ```
+  $ roslaunch airsim_ros_pkgs airsim_node.launch
+  $ roslaunch sgm_gpu_ros test_airsim.launch
+  ```
+
