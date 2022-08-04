@@ -1,0 +1,68 @@
+{
+  "SettingsVersion": 1.2,
+ "SimMode": "Multirotor",
+ "ClockType": "SteppableClock",
+ "Vehicles": {
+    "PX4": {
+       "VehicleType": "PX4Multirotor",
+       "UseSerial": false,
+       "LockStep": true,
+       "UseTcp": true,
+       "TcpPort": 4560,
+       "DefaultVehicleState": "Armed",
+       "AutoCreate": true,
+       "PawnPath": "",
+       "EnableCollisionPassthrogh": false,
+       "EnableCollisions": true,
+       "AllowAPIAlways": true,
+       "Sensors":{
+            "Imu": {
+                  "SensorType": 2,
+                  "Enabled" : true,
+                  "AngularRandomWalk": 0.001,
+                  "GyroBiasStabilityTau": 500,
+                  "GyroBiasStability": 4.6,
+                  "VelocityRandomWalk": 0.001,
+                  "AccelBiasStabilityTau": 800,
+                  "AccelBiasStability": 36
+                }
+       },
+      "Cameras": {
+       "right": {
+         "CaptureSettings": [
+         {
+           "ImageType": 0,
+           "PublishToRos": 1,
+           "Width": 640,
+           "Height": 480,
+           "FOV_Degrees": 90
+         }
+         ],
+         "X": 0.4, "Y": 0.05, "Z": 0.0,
+         "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0
+         },
+       "left": {
+         "CaptureSettings": [
+         {
+           "ImageType": 0,
+           "PublishToRos": 1,
+           "Width": 640,
+           "Height": 480,
+           "FOV_Degrees": 90
+         },
+         {
+          "ImageType": 1,
+          "Width": 640,
+          "Height": 480,
+          "FOV_Degrees": 90
+         }
+         ],
+         "X": 0.4, "Y": -0.05, "Z": 0.0,
+         "Pitch": 0.0, "Roll": 0.0, "Yaw": 0.0
+         }
+    },
+    "X": 0, "Y": 0, "Z": -0.1,
+    "Pitch": 0.0, "Roll": 0.0, "Yaw": 90.0
+   }
+   }
+}
