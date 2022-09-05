@@ -92,7 +92,7 @@ namespace sgm_gpu {
                     depth_uint16.at<unsigned short>(r, c) = 0;
                 } else if (disparity.at<float>(r, c) == 255.0f) {
 //                    depth_float.at<float>(r, c) = 0.0f;
-                    depth_uint16.at<unsigned short>(r, c) = 255;
+                    depth_uint16.at<unsigned short>(r, c) = 0;
                 } else {
 //                    depth_float.at<float>(r, c) = static_cast<float>(stereo_baseline_) * f /
 //                                                  disparity.at<float>(r, c);
